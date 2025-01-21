@@ -116,7 +116,7 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
       final filePath = '${tempDir.path}/temp_image.jpg';
       final imageFile = File(filePath)..writeAsBytesSync(imageData);
 
-      var input = ...; // Your input data processing here
+      var input = imageData.buffer.asUint8List(); // Convert image data to input format
       var output = List.filled(1, 0).reshape([1, 1]);  // Example output shape
 
       _interpreter.run(input, output);
