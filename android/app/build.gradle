@@ -7,21 +7,21 @@ plugins {
 
 android {
     namespace = "com.example.test_project"
-    compileSdkVersion 34 // Updated to 33
+    compileSdkVersion 34 // Updated to 34
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17 // Updated to Java 11
-        targetCompatibility JavaVersion.VERSION_17 // Updated to Java 11
+        sourceCompatibility JavaVersion.VERSION_17 // Updated to Java 17
+        targetCompatibility JavaVersion.VERSION_17 // Updated to Java 17
     }
 
     kotlinOptions {
-        jvmTarget = "17" // Updated to Java 11
+        jvmTarget = "17" // Updated to Java 17
     }
 
     defaultConfig {
         applicationId "com.example.test_project"
         minSdkVersion 23 // Keep this value as is
-        targetSdkVersion 34 // Updated to 33
+        targetSdkVersion 34 // Updated to 34
         versionCode 1 // Keep as per your requirements
         versionName "1.0" // Keep as per your requirements
     }
@@ -42,4 +42,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // other dependencies
+    implementation 'org.tensorflow:tensorflow-lite:+'
 }
