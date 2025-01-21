@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:tflite/tflite.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
 import 'dart:typed_data';
 import 'dart:io';
 import 'dart:async';
@@ -24,6 +24,7 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
   bool _isLoading = false;
   int _currentIndex = 2;
   Map<String, dynamic> _symptomsData = {};
+  late Interpreter _interpreter;
 
   @override
   void initState() {
@@ -32,14 +33,11 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
     _loadSymptomsData();
   }
 
-  // Load TFLite model
+  // Load the model using tflite_flutter
   Future<void> _loadModel() async {
     try {
-      String? res = await Tflite.loadModel(
-        model: "assets/crop_disease_model.tflite",
-        labels: "assets/data/labels.txt",
-      );
-      print("Model loaded: $res");
+      _interpreter = await Interpreter.fromAsset('assets/crop_disease_model.tflite');
+      print("Model loaded successfully!");
     } catch (e) {
       print("Failed to load model: $e");
     }
@@ -68,8 +66,7 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
             TextButton(
               onPressed: () async {
                 final picker = ImagePicker();
-                final pickedFile =
-                    await picker.pickImage(source: ImageSource.gallery);
+                final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
                 if (pickedFile != null) {
                   _imageData = await pickedFile.readAsBytes();
@@ -108,7 +105,7 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
     );
   }
 
-  // Send image to model for prediction
+  // Send image to model for prediction using tflite_flutter
   Future<void> _sendImage(Uint8List imageData) async {
     setState(() {
       _isLoading = true;
@@ -119,24 +116,15 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
       final filePath = '${tempDir.path}/temp_image.jpg';
       final imageFile = File(filePath)..writeAsBytesSync(imageData);
 
-      var result = await Tflite.runModelOnImage(
-        path: filePath,
-        numResults: 2,
-        threshold: 0.1,
-        asynch: true,
-      );
+      var input = ...; // Your input data processing here
+      var output = List.filled(1, 0).reshape([1, 1]);  // Example output shape
 
-      if (result != null && result.isNotEmpty) {
-        setState(() {
-          _prediction = result[0]['label'] ?? 'No prediction available';
-        });
-        await _loadSymptoms(); // Load symptoms for the predicted label
-      } else {
-        setState(() {
-          _prediction = 'No result found';
-          _symptoms = 'No symptoms found';
-        });
-      }
+      _interpreter.run(input, output);
+
+      setState(() {
+        _prediction = output[0]; // Process output as required
+      });
+      await _loadSymptoms(); // Load symptoms for prediction
     } catch (e) {
       setState(() {
         _prediction = 'Error: $e';
@@ -155,7 +143,7 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
       final List<String>? symptomsList = _symptomsData[_prediction]?['symptoms']?.cast<String>();
       setState(() {
         _symptoms = symptomsList != null
-            ? symptomsList.join("\n") // Join the list items into a single string
+            ? symptomsList.join("\n")
             : 'Symptoms not available for this label';
       });
     } catch (e) {
@@ -166,18 +154,6 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
     }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-      if (_currentIndex == 0) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => HomePage()),
-        );
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,122 +161,12 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset('assets/graphic_image.png', height: 200, width: 200),
-            SizedBox(height: 20),
-            Text(
-              'Health Check',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF222222),
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Take a picture of your crop or upload an image to detect diseases and receive treatment advice.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Color(0xFF222222)),
-            ),
-            SizedBox(height: 30),
-            ElevatedButton.icon(
-              onPressed: _pickImage,
-              icon: Icon(Icons.upload),
-              label: Text('Upload Image & Detect'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF3AAA49),
-                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                textStyle: TextStyle(fontSize: 18),
-              ),
-            ),
-            SizedBox(height: 20),
-            _imageData == null
-                ? Text('No image selected.', style: TextStyle(color: Color(0xFF222222)))
-                : Column(
-                    children: [
-                      Image.memory(_imageData!, height: 200, width: 200),
-                      SizedBox(height: 20),
-                      Card(
-                        color: Colors.white,
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Prediction:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFF088A6A),
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              _isLoading
-                                  ? CircularProgressIndicator()
-                                  : Text(
-                                      _prediction,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Color(0xFF222222),
-                                      ),
-                                    ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Card(
-                        color: Colors.white,
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Symptoms:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFF088A6A),
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              _isLoading
-                                  ? CircularProgressIndicator()
-                                  : Text(
-                                      _symptoms,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Color(0xFF222222),
-                                      ),
-                                    ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+            Text('Prediction: $_prediction'),
+            Text('Symptoms: $_symptoms'),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _pickImage,
-        child: Icon(Icons.camera_alt),
-        backgroundColor: Color(0xFF088A6A),
-      ),
-      bottomNavigationBar: CustomBottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
       ),
     );
   }
