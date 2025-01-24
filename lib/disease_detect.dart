@@ -32,12 +32,15 @@ class _CropDiseaseHomeState extends State<CropDiseaseHome> {
     _loadSymptomsData();
   }
 
-  // Load TFLite model
+  // Load TFLite model and labels
   Future<void> _loadModel() async {
     try {
       String? res = await Tflite.loadModel(
         model: "assets/crop_disease_model.tflite",
-        labels: "assets/data/labels.txt",
+        labels: "assets/data/labels_with_symptoms.json",
+        numThreads: 1,
+        isAsset: true,
+        useGpuDelegate: false,
       );
       print("Model loaded: $res");
     } catch (e) {
