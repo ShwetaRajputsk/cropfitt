@@ -3,8 +3,8 @@ package io.flutter.plugins;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import io.flutter.Log;
-
 import io.flutter.embedding.engine.FlutterEngine;
+import io.flutter.plugins.tflite.TflitePlugin;  // Added this import
 
 /**
  * Generated file. Do not edit.
@@ -59,6 +59,12 @@ public final class GeneratedPluginRegistrant {
       flutterEngine.getPlugins().add(new io.flutter.plugins.pathprovider.PathProviderPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin path_provider_android, io.flutter.plugins.pathprovider.PathProviderPlugin", e);
+    }
+    // Add the TensorFlow Lite Plugin here
+    try {
+      flutterEngine.getPlugins().add(new TflitePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin tflite, io.flutter.plugins.tflite.TflitePlugin", e);
     }
   }
 }
