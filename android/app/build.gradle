@@ -37,6 +37,12 @@ android {
         }
     }
 
+    // Add aaptOptions here
+    aaptOptions {
+        noCompress 'tflite'
+        noCompress 'lite'
+    }
+    
     ndkVersion = flutter.ndkVersion // Keep as specified
 }
 
